@@ -20,7 +20,7 @@ public class State {
     private double fvalue;
 
     //gvalue
-    private int cost;
+    private double cost;
 
     public Point getRobotLocation() {
         return robotLocation;
@@ -65,11 +65,11 @@ public class State {
         this.fvalue = fvalue;
     }
 
-    public int getCost() {
+    public double getCost() {
         return cost;
     }
 
-    public void setCost(int cost) {
+    public void setCost(double cost) {
         this.cost = cost;
     }
 

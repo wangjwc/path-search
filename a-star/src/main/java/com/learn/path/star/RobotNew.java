@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class RobotNew {
     //行数
@@ -108,7 +107,7 @@ public class RobotNew {
             State state = priorityQueue.poll();
 
             //如果达到目标,输出结果并退出
-            if (isgoal(state)) {
+            if (isGoal(state)) {
                 output(state);
                 return;
             }
@@ -135,7 +134,7 @@ public class RobotNew {
             }
             newState.setDirtList(newdirtList);
             // gValue + 1
-            newState.setCost(state.getCost() + 1);
+            newState.setCost(getGValue(state.getCost(), false));
             //Fvalue为gValue和hValue的和
             newState.setFvalue(newState.getCost() + newdirtList.size());
             newState.setRobotLocation(new Point(x, y));
@@ -161,7 +160,7 @@ public class RobotNew {
                 newState.setRobotLocation(new Point(x - 1, y));
                 //N代表North,即向上方移动一个格子
                 newState.setOperation("↑");
-                newState.setCost(state.getCost() + 1);
+                newState.setCost(getGValue(state.getCost(), false));
                 newState.setFvalue(newState.getCost() + getHValue(newState));
                 newState.setPreviousState(state);
                 if (!isDuplicated(newState)) {
@@ -179,7 +178,7 @@ public class RobotNew {
                 newState.setDirtList(state.getDirtList());
                 newState.setRobotLocation(new Point(x - 1, y + 1));
                 newState.setOperation("↗");
-                newState.setCost(state.getCost() + 1);
+                newState.setCost(getGValue(state.getCost(), true));
                 newState.setFvalue(newState.getCost() + getHValue(newState));
                 newState.setPreviousState(state);
                 if (!isDuplicated(newState)) {
@@ -200,7 +199,7 @@ public class RobotNew {
                 newState.setRobotLocation(new Point(x, y + 1));
                 //E代表East,即向右侧移动一个格子
                 newState.setOperation("→");
-                newState.setCost(state.getCost() + 1);
+                newState.setCost(getGValue(state.getCost(), false));
                 newState.setFvalue(newState.getCost() + getHValue(newState));
                 newState.setPreviousState(state);
                 if (!isDuplicated(newState)) {
@@ -219,7 +218,7 @@ public class RobotNew {
                 newState.setRobotLocation(new Point(x + 1, y + 1));
                 //E代表East,即向右侧移动一个格子
                 newState.setOperation("↘");
-                newState.setCost(state.getCost() + 1);
+                newState.setCost(getGValue(state.getCost(), true));
                 newState.setFvalue(newState.getCost() + getHValue(newState));
                 newState.setPreviousState(state);
                 if (!isDuplicated(newState)) {
@@ -240,7 +239,7 @@ public class RobotNew {
                 newState.setRobotLocation(new Point(x + 1, y));
                 //S代表South,即向下方移动一个格子
                 newState.setOperation("↓");
-                newState.setCost(state.getCost() + 1);
+                newState.setCost(getGValue(state.getCost(), false));
                 newState.setFvalue(newState.getCost() + getHValue(newState));
                 newState.setPreviousState(state);
                 if (!isDuplicated(newState)) {
@@ -260,7 +259,7 @@ public class RobotNew {
                 newState.setRobotLocation(new Point(x + 1, y - 1));
                 //S代表South,即向下方移动一个格子
                 newState.setOperation("↙");
-                newState.setCost(state.getCost() + 1);
+                newState.setCost(getGValue(state.getCost(), true));
                 newState.setFvalue(newState.getCost() + getHValue(newState));
                 newState.setPreviousState(state);
                 if (!isDuplicated(newState)) {
@@ -281,7 +280,7 @@ public class RobotNew {
                 newState.setRobotLocation(new Point(x, y - 1));
                 //W代表West,即向左侧移动一个格子
                 newState.setOperation("←");
-                newState.setCost(state.getCost() + 1);
+                newState.setCost(getGValue(state.getCost(), false));
                 newState.setFvalue(newState.getCost() + getHValue(newState));
                 newState.setPreviousState(state);
                 if (!isDuplicated(newState)) {
@@ -300,7 +299,7 @@ public class RobotNew {
                 newState.setRobotLocation(new Point(x - 1, y - 1));
                 //S代表South,即向下方移动一个格子
                 newState.setOperation("↖");
-                newState.setCost(state.getCost() + 1);
+                newState.setCost(getGValue(state.getCost(), true));
                 newState.setFvalue(newState.getCost() + getHValue(newState));
                 newState.setPreviousState(state);
                 if (!isDuplicated(newState)) {
@@ -316,34 +315,40 @@ public class RobotNew {
 
     }
 
-    private static double getHValue(State currentState) {
-        //return currentState.getDirtList().size();
-
-        if (currentState.getDirtList().size() == 1) {
-            return 1;
+    private static double getGValue(double oldGValue, boolean isDiagonal) {
+        if (isDiagonal) {
+            return oldGValue + 1.4;
+        } else {
+            return oldGValue + 1;
         }
+    }
 
-        Point currentStatePoint = currentState.getRobotLocation();
+    private static double getHValue(State currentState) {
+        return currentState.getDirtList().size();
 
-        List<Double> ls = currentState.getDirtList().stream()
-                .map(d -> Math.sqrt(Math.pow(d.getX() - currentStatePoint.getX(), 2) + Math.pow(d.getY() - currentStatePoint.getY(), 2)))
-                .collect(Collectors.toList());
-
-        return ls.stream().reduce(Double::sum).orElse(0.0);
-//        double avg = ls.stream().reduce(Double::sum).orElse(0.0) / ls.size();
-
+//        if (currentState.getDirtList().size() == 1) {
+//            return 1;
+//        }
 //
+//        Point currentStatePoint = currentState.getRobotLocation();
+//
+//        List<Double> ls = currentState.getDirtList().stream()
+//                .map(d -> Math.hypot(currentStatePoint.getX() - d.getX(), currentStatePoint.getY() - d.getY()))
+//                .collect(Collectors.toList());
+//
+//        //return ls.stream().reduce(Double::sum).orElse(0.0);
+//
+//        double avg = ls.stream().reduce(Double::sum).orElse(0.0) / ls.size();
 //        double variance = 0.0;
 //        for (Double d : ls) {
 //            variance += (d - avg) * (d - avg);
 //        }
 //
 //        return variance / ls.size() - 1;
-
     }
 
     //判断是否已经达到目标,即当前遍历到的state中手否已经没有灰尘需要清理
-    public static boolean isgoal(State state) {
+    public static boolean isGoal(State state) {
         if (state.getDirtList().isEmpty()) {
             return true;
         }
@@ -415,7 +420,9 @@ public class RobotNew {
             Point p = s.getRobotLocation();
 
             if (null != next.getOperation()) {
-                map[p.getX()][p.getY()] = next.getOperation();
+                if (!"C".equals(s.getOperation())) {
+                    map[p.getX()][p.getY()] = next.getOperation();
+                }
             }
             s = next;
             printMap();

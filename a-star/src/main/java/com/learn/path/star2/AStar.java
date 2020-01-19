@@ -18,30 +18,10 @@ public class AStar {
     private final int xstart;
     private final int ystart;
     private int xend, yend;
+    /**
+     * 是否允许对角
+     */
     private final boolean diag;
-
-    // Node class for convienience
-    static class Node implements Comparable {
-        public Node parent;
-        public int x, y;
-        public double g;
-        public double h;
-
-        Node(Node parent, int xpos, int ypos, double g, double h) {
-            this.parent = parent;
-            this.x = xpos;
-            this.y = ypos;
-            this.g = g;
-            this.h = h;
-        }
-
-        // Compare by f value (g + h)
-        @Override
-        public int compareTo(Object o) {
-            Node that = (Node) o;
-            return (int) ((this.g + this.h) - (that.g + that.h));
-        }
-    }
 
     AStar(int[][] maze, int xstart, int ystart, boolean diag) {
         this.open = new ArrayList<>();
@@ -92,42 +72,64 @@ public class AStar {
         return array.stream().anyMatch((n) -> (n.x == node.x && n.y == node.y));
     }
 
-    /*
-     ** Calulate distance between this.now and xend/yend
-     **
-     ** @return (int) distance
+    /**
+     * 计算this.now的相邻方格到目的地（xend/yend）间的距离
+     *
+     * @param dx
+     * @param dy
+     * @return
      */
     private double distance(int dx, int dy) {
         if (this.diag) { // if diagonal movement is alloweed
-            return Math.hypot(this.now.x + dx - this.xend, this.now.y + dy - this.yend); // return hypothenuse
+            // sqrt(h2 +w2)
+            // 计算欧氏距离(直角三角形的斜边长度)
+            return Math.hypot(this.now.x + dx - this.xend, this.now.y + dy - this.yend);
         } else {
+            // h + w
+            // 计算曼哈顿距离(直角三角形的直角边总长度)
             return Math.abs(this.now.x + dx - this.xend) + Math.abs(this.now.y + dy - this.yend); // else return "Manhattan distance"
         }
     }
 
+    /**
+     * 添加临近节点
+     */
     private void addNeigborsToOpenList() {
-        Node node;
         for (int x = -1; x <= 1; x++) {
             for (int y = -1; y <= 1; y++) {
+                if (x == 0 && y == 0) {
+                    continue;
+                }
+
+                if (this.now.x + x < 0 || this.now.x + x >= this.maze[0].length) {
+                    continue;
+                }
+
+                if (this.now.y + y < 0 || this.now.y + y >= this.maze.length) {
+                    continue;
+                }
+
                 if (!this.diag && x != 0 && y != 0) {
                     continue; // skip if diagonal movement is not allowed
                 }
-                node = new Node(this.now, this.now.x + x, this.now.y + y, this.now.g, this.distance(x, y));
-                if ((x != 0 || y != 0) // not this.now
-                        && this.now.x + x >= 0 && this.now.x + x < this.maze[0].length // check maze boundaries
-                        && this.now.y + y >= 0 && this.now.y + y < this.maze.length
-                        && this.maze[this.now.y + y][this.now.x + x] != -1 // check if square is walkable
+
+                Node node = new Node(this.now, this.now.x + x, this.now.y + y, this.now.g, this.distance(x, y));
+
+                /**
+                 * 过滤障碍物
+                 */
+                if (this.maze[this.now.y + y][this.now.x + x] != -1 // check if square is walkable
                         && !findNeighborInList(this.open, node) && !findNeighborInList(this.closed, node)) { // if not already done
-                    node.g = node.parent.g + 1.; // Horizontal/vertical cost = 1.0
-                    node.g += maze[this.now.y + y][this.now.x + x]; // add movement cost for this square
+                    // 加基础移动成本(1)
+                    node.g = node.parent.g + 1.0;
+                    // 加方格地形移动成本
+                    node.g += maze[this.now.y + y][this.now.x + x];
 
                     // diagonal cost = sqrt(hor_cost² + vert_cost²)
                     // in this example the cost would be 12.2 instead of 11
-                        /*
-                        if (diag && x != 0 && y != 0) {
-                            node.g += .4;	// Diagonal movement cost = 1.4
-                        }
-                        */
+                    if (diag && x != 0 && y != 0) {
+                        node.g += 0.4;    // Diagonal movement cost = 1.4
+                    }
                     this.open.add(node);
                 }
             }
@@ -150,20 +152,35 @@ public class AStar {
         };
         AStar as = new AStar(maze, 0, 0, true);
         List<Node> path = as.findPathTo(7, 7);
+
+
         if (path != null) {
             path.forEach((n) -> {
                 System.out.print("[" + n.x + ", " + n.y + "] ");
-                maze[n.y][n.x] = -1;
+                maze[n.y][n.x] = -2;
             });
             System.out.printf("\nTotal cost: %.02f\n", path.get(path.size() - 1).g);
 
-            for (int[] maze_row : maze) {
-                for (int maze_entry : maze_row) {
-                    switch (maze_entry) {
+            /**
+             * 列序号
+             */
+            System.out.print("+");
+            for (int i = 0; i < maze[0].length; i++) {
+                System.out.print(i);
+            }
+            System.out.println();
+
+            /**
+             * 行
+             */
+            for (int i = 0; i < maze.length; i++) {
+                System.out.print(i);
+                for (int j = 0; j < maze[i].length; j++) {
+                    switch (maze[i][j]) {
                         case 0:
                             System.out.print(".");
                             break;
-                        case -1:
+                        case -2:
                             System.out.print("*");
                             break;
                         default:
