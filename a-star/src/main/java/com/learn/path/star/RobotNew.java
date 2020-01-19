@@ -419,7 +419,7 @@ public class RobotNew {
 
             Point p = s.getRobotLocation();
 
-            if (null != next.getOperation()) {
+            if (null != s.getOperation()) {
                 if (!"C".equals(s.getOperation())) {
                     map[p.getX()][p.getY()] = next.getOperation();
                 }
